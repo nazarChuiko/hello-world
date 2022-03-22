@@ -46,7 +46,7 @@ Metadata:
     Description: hello world
     Author: nazariichuiko
     SpdxLicenseId: Apache-2.0
-    LicenseUrl: LICENSE.txt
+    LicenseUrl: LICENSE
     ReadmeUrl: README.md
     Labels: ['tests']
     HomePageUrl: https://github.com/nazarChuiko/hello-world
