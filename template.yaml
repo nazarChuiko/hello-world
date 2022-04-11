@@ -9,14 +9,16 @@ Description: >
 Globals:
   Function:
     Timeout: 3
-
 Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: hello-world/
-      Handler: app.handler
+      Handler: parser.sendMenuButton
       Runtime: nodejs14.x
+      Environment:
+        Variables:
+          SLACK_URL: "Hello World"
       Architectures:
         - x86_64
       Events:
@@ -25,14 +27,74 @@ Resources:
           Properties:
             Path: /hello
             Method: post
+            #RestApiId: helloApi
+
+  checkResult:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: hello-world/
+      Handler: pars.checkResult
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          SLACK_URL: !Ref apiGateway
+      Architectures:
+        - x86_64
+  apiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Description: A test API
+      Name: apiGateway
+
+  PostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref apiGateway
+      ResourceId: !GetAtt apiGateway.RootResourceId
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Uri: !Sub >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${checkResult.Arn}/invocations
+
+  CallBackDeploymentApi:
+    DependsOn: PostMethod
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref apiGateway
+      Description: Automatically created by the RestApi construct
+  CallbackStageApi:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref apiGateway
+      DeploymentId: !Ref CallBackDeploymentApi
+      StageName: prod
+
+
+  apiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt checkResult.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join [
+        "", [
+          "arn:aws:execute-api:",
+          {"Ref": "AWS::Region"}, ":",
+          {"Ref": "AWS::AccountId"}, ":",
+          !Ref apiGateway, "/",
+          !Ref CallbackStageApi
+        ]
+      ]
+
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
     Value: !GetAtt HelloWorldFunction.Arn
@@ -42,13 +104,15 @@ Outputs:
 
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: helloWorldNazar
-    Description: hello world
+    Name: slackBotChuiko2
+    Description: slack bot
     Author: nazariichuiko
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE
     ReadmeUrl: README.md
     Labels: ['tests']
     HomePageUrl: https://github.com/nazarChuiko/hello-world
-    SemanticVersion: 0.0.1
+    SemanticVersion: 0.2.9
     SourceCodeUrl: https://github.com/nazarChuiko/hello-world
+
+

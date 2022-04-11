@@ -7,13 +7,9 @@
   "author": "SAM CLI",
   "license": "MIT",
   "dependencies": {
-    "@slack/bolt": "^3.9.0",
     "aws-sdk": "^2.1077.0",
     "axios": "^0.26.0",
-    "cheerio": "^1.0.0-rc.10",
-    "esm": "^3.2.25",
-    "fs": "^0.0.1-security",
-    "google-spreadsheet": "^3.2.0"
+    "cheerio": "^1.0.0-rc.10"
   },
   "scripts": {
     "test": "mocha tests/unit/"
